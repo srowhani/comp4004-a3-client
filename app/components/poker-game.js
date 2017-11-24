@@ -3,6 +3,19 @@ import Faker from 'faker';
 export default Component.extend({
   classNames: ['poker-game'],
   _ws: null,
+  logs: [],
+  aiTypes: [
+    {
+      type: 'type_straight',
+      description: 'Aims for at least a straight'
+    }, {
+      type: 'type_flush',
+      description: 'Aims for at least a flush'
+    }, {
+      type: 'type_high_card',
+      description: 'Gives more significance to the value of a high card'
+    }
+  ],
 
   didInsertElement () {
     this._ws = new WebSocket(`ws://${location.hostname}:${8081}/game`);
@@ -18,6 +31,9 @@ export default Component.extend({
   },
   actions: {
     catch_up (content) {
+      this.get('logs').pushObject({
+        message: 'Catching up game state'
+      })
       this.set('users', content.users);
       this.set('available_rooms', content.available_rooms);
       // update initial state
@@ -34,7 +50,7 @@ export default Component.extend({
     },
     host_room (settings) {
       const username = Faker.name.firstName()
-
+      this.set('username', username);
       const host_room_payload = {
         type: 'host_room',
         content: {
@@ -50,6 +66,7 @@ export default Component.extend({
     },
     room_created (content) {
       this.set('available_rooms', content.available_rooms);
+
     },
     confirm_join_room (room) {
       this.set('joinRoomModalVisible', true);
@@ -60,19 +77,61 @@ export default Component.extend({
       this.set('modal_room', room);
     },
     attempt_join_room (room) {
+      const username = Faker.name.firstName();
+      this.set('username', username);
       const payload = {
         type: 'attempt_join_room',
         content: {
           room_id: room.room_id,
-          username: Faker.name.firstName()
+          username
         }
       }
       this._ws.send(JSON.stringify(payload));
     },
     join_room_success (content) {
+      this.get('logs').pushObject({
+        message: `${content.joined_user} has joined room!`
+      });
       this.set('joinRoomModalVisible', false);
       this.set('current_room_id', content.room_id);
+      this.set('current_room_host', content.room_host);
       this.set('users', content.users);
+    },
+
+    room_ready (content = {}) {
+        this.set('game_state', 'ready_admin');
+        this.get('logs').pushObject({
+          message: "Room is now ready to start"
+        });
+    },
+
+    startGame () {
+      this.get('logs').pushObject({
+        message: "Attempting game start"
+      })
+      this._ws.send(JSON.stringify({
+        type: 'start_game',
+        room_id: this.get('current_room_id')
+      }));
+    },
+
+    room_host_update (content) {
+      this.set('current_room_host', content.current_room_host);
+      this.set('current_room_id', content.current_room_id);
+      this.get('logs').pushObject({
+        message: `New host assigned for room ${content.current_room_id} - ${content.current_room_host}`
+      })
+    },
+    addAItoRoom () {
+      const ai = this.get('aiType');
+      this._ws.send(JSON.stringify({
+        type: 'room_add_ai',
+        content: {
+          name: `bot-${faker.name.firstName()}`,
+          ai_type: ai.type,
+          room_id: this.get('current_room_id')
+        }
+      }));
     }
   }
 });

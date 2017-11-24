@@ -2,7 +2,7 @@
   <div class='content flex horizontal' style='flex: 8'>
     <div class='side-bar flex vertical'>
       <div class='flex' style='flex: 4; flex-direction: column'>
-        {{#paper-subheader}}Available Rooms{{/paper-subheader}}
+        {{#paper-subheader}}Available Rooms - {{username}}{{/paper-subheader}}
         {{paper-divider}}
         {{#paper-list}}
           {{#each available_rooms as |room|}}
@@ -18,13 +18,40 @@
       </div>
       <div class='flex' style='flex: 2'>
         {{#paper-subheader}}Logs{{/paper-subheader}}
+        {{#paper-list class='logs'}}
+          {{#each logs as |log|}}
+            {{#paper-item}}{{log.message}}{{/paper-item}}
+          {{/each}}
+        {{/paper-list}}
       </div>
     </div>
     <div class='flex' style='flex: 8'>
-      {{current_room_id}}<br/>
+      RoomId: {{current_room_id}}<br/>
+      Host: {{current_room_host}}<br/>
       {{#each users as |user|}}
         {{user}}<br/>
       {{/each}}
+      {{#if (and (eq username current_room_host) username)}}
+        <div class='admin-panel'>
+          {{#paper-subheader}}Admin Panel{{/paper-subheader}}
+          {{#paper-select
+            disabled=disableSelect
+            label="AI Strategy"
+            options=aiTypes
+            selected=aiType
+            onChange=(action (mut aiType))
+            as |state|}}
+            {{state.type}}
+          {{/paper-select}}
+          {{aiType.description}}
+          {{#paper-button primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
+
+          {{#if (eq game_state 'ready_admin')}}
+            {{#paper-button primary=true onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
+          {{/if}}
+        </div>
+
+      {{/if}}
     </div>
   </div>
   {{#paper-button secondary=true class='host-game' isVisible=isSessionRunning onClick=(action (mut showHostGameModal) true)}}Host Game{{/paper-button}}
