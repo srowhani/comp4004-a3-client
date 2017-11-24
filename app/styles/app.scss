@@ -1,0 +1,51 @@
+@import 'ember-paper';
+
+.ember-application {
+  > .ember-view {
+    height: 100%;
+  }
+  .flex {
+    &-1 {
+      flex: 1;
+    }
+    &-2 {
+      flex: 2;
+    }
+    &-5 {
+      flex: 5;
+    }
+  }
+  .poker-game {
+    position: relative;
+    height: 100%;
+    display: flex;
+    .side-bar {
+      box-shadow: 8px 5px 20px -5px rgba(0,0,0,0.1);
+      flex: 3;
+      md-icon {
+        margin-left: 0;
+      }
+    }
+    .join-game {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+    }
+
+    .host-game {
+      position: absolute;
+      bottom: 10px;
+      right: 100px;
+    }
+  }
+
+  .flex {
+    display: flex;
+    &.vertical {
+      flex-direction: column;
+    }
+    &.horizontal {
+      flex-direction: row;
+    }
+  }
+}

@@ -1,0 +1,46 @@
+<div class='flex vertical'>
+  <div class='content flex horizontal' style='flex: 8'>
+    <div class='side-bar flex vertical'>
+      <div class='flex' style='flex: 4; flex-direction: column'>
+        {{#paper-subheader}}Available Rooms{{/paper-subheader}}
+        {{paper-divider}}
+        {{#paper-list}}
+          {{#each available_rooms as |room|}}
+            {{#paper-item class='md-line-3 flex horizontal' onClick=(action (if (eq current_room_id room_id) 'confirm_join_room' 'confirm_leave_room') room) }}
+              {{paper-icon "face" class="md-avatar-icon"}}
+              <div class="md-list-item-text">
+                <h6>{{room.room_id}}</h6>
+                <h6>{{room.num_users}} / {{room.capacity}} users</h6>
+              </div>
+            {{/paper-item}}
+          {{/each}}
+        {{/paper-list}}
+      </div>
+      <div class='flex' style='flex: 2'>
+        {{#paper-subheader}}Logs{{/paper-subheader}}
+      </div>
+    </div>
+    <div class='flex' style='flex: 8'>
+      {{current_room_id}}<br/>
+      {{#each users as |user|}}
+        {{user}}<br/>
+      {{/each}}
+    </div>
+  </div>
+  {{#paper-button secondary=true class='host-game' isVisible=isSessionRunning onClick=(action (mut showHostGameModal) true)}}Host Game{{/paper-button}}
+  {{#paper-button primary=true class='join-game' onClick=(action 'attempt_join_game')}}Join Game{{/paper-button}}
+</div>
+{{#if showHostGameModal}}
+  {{host-dialog
+    onClose=(action (mut showHostGameModal) false)
+    onSubmit=(action 'host_room')
+    numPlayers=numPlayers
+  }}
+{{/if}}
+{{#if joinRoomModalVisible}}
+  {{confirm-join-dialog
+    onClose=(action (mut joinRoomModalVisible) false)
+    onSubmit=(action 'attempt_join_room' modal_room)
+    room=modal_room
+  }}
+{{/if}}

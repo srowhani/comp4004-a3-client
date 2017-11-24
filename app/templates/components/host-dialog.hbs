@@ -1,0 +1,13 @@
+{{#paper-dialog fullscreen=fullscreen onClose=onClose origin=dialogOrigin}}
+
+  {{#paper-dialog-content}}
+    <h2 class="md-title">Lobby Settings</h2>
+    <h4>Number of players:</h4>
+    {{paper-input type="number" placeholder="Number of players" autofocus=true value=numPlayers onChange=(action (mut numPlayers))}}
+  {{/paper-dialog-content}}
+
+  {{#paper-dialog-actions class="layout-row"}}
+    {{#paper-button primary=true onClick=(action onSubmit (hash players=numPlayers))}}Submit{{/paper-button}}
+  {{/paper-dialog-actions}}
+
+{{/paper-dialog}}
