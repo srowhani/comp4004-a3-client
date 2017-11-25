@@ -1,4 +1,5 @@
 import Component from '@ember/component';
+
 import Faker from 'faker';
 export default Component.extend({
   classNames: ['poker-game'],
@@ -16,22 +17,32 @@ export default Component.extend({
       description: 'Gives more significance to the value of a high card'
     }
   ],
-
   didInsertElement () {
     this._ws = new WebSocket(`ws://${location.hostname}:${8081}/game`);
     this._ws.onmessage = (msg) => {
       const body = JSON.parse(msg.data);
       console.log('Event: ', body)
-      this.send(body.type, body.content)
+      this.get('logs').insertAt(0, {
+        message: `${body.type}: ${body.content ? JSON.stringify(body.content) : '{}'}`
+      })
+      try {
+        this.send(body.type, body.content)
+      } catch (e) {
+        this.get('logs').insertAt(0, {
+          message: e.message
+        })
+      }
+
     };
   },
 
   willDestroyElement () {
     this._ws.close();
   },
+
   actions: {
     catch_up (content) {
-      this.get('logs').pushObject({
+      this.get('logs').insertAt(0, {
         message: 'Catching up game state'
       })
       this.set('users', content.users);
@@ -89,7 +100,7 @@ export default Component.extend({
       this._ws.send(JSON.stringify(payload));
     },
     join_room_success (content) {
-      this.get('logs').pushObject({
+      this.get('logs').insertAt(0, {
         message: `${content.joined_user} has joined room!`
       });
       this.set('joinRoomModalVisible', false);
@@ -100,25 +111,27 @@ export default Component.extend({
 
     room_ready (content = {}) {
         this.set('game_state', 'ready_admin');
-        this.get('logs').pushObject({
+        this.get('logs').insertAt(0, {
           message: "Room is now ready to start"
         });
     },
 
     startGame () {
-      this.get('logs').pushObject({
+      this.get('logs').insertAt(0, {
         message: "Attempting game start"
       })
       this._ws.send(JSON.stringify({
         type: 'start_game',
-        room_id: this.get('current_room_id')
+        content: {
+          room_id: this.get('current_room_id')
+        }
       }));
     },
 
     room_host_update (content) {
       this.set('current_room_host', content.current_room_host);
       this.set('current_room_id', content.current_room_id);
-      this.get('logs').pushObject({
+      this.get('logs').insertAt(0, {
         message: `New host assigned for room ${content.current_room_id} - ${content.current_room_host}`
       })
     },
@@ -132,6 +145,15 @@ export default Component.extend({
           room_id: this.get('current_room_id')
         }
       }));
+    },
+    game_started () {
+      this.set('game_started', true);
+    },
+    got_cards (content) {
+      this.set('hand', content.player_cards);
+    },
+    turn_update (content) {
+      this.set('isYourTurn', content.user_id === this.get('username'));
     }
   }
 });

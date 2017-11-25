@@ -33,12 +33,20 @@
     }
     .logs {
       overflow: scroll;
+      height: 100%;
+      background: #d3d3d32b;
     }
     .host-game {
       position: absolute;
       bottom: 10px;
-      right: 100px;
+      right: 10px;
     }
+    .room-list {
+      .md-list-item-inner {
+        max-height: 100px;
+      }
+    }
+
   }
 
   .flex {
