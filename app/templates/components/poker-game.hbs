@@ -27,42 +27,55 @@
       </div>
     </div>
     <div class='flex' style='flex: 8'>
-      RoomId: {{current_room_id}}<br/>
-      Host: {{current_room_host}}<br/>
-      {{#each users as |user|}}
-        {{user}}<br/>
-      {{/each}}
-      {{#if (and (eq username current_room_host) username)}}
-        <div class='admin-panel'>
-          {{#paper-subheader}}Admin Panel{{/paper-subheader}}
-          {{#paper-select
-            disabled=disableSelect
-            label="AI Strategy"
-            options=aiTypes
-            selected=aiType
-            onChange=(action (mut aiType))
-            as |state|}}
-            {{state.type}}
-          {{/paper-select}}
-          {{aiType.description}}
-          {{#paper-button disabled=(not aiType) iconButton=true primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
+      {{#if current_room_id}}
+        RoomId: {{current_room_id}}<br/>
+        Host: {{current_room_host}}<br/>
+        {{#each-in userStateMap as |user state|}}
+          {{log user}}
+          {{log state}}
+          {{#if (not (eq user username))}}{{user}} - {{get state 'cards'}} - [{{get state 'state'}}] <br/>{{/if}}
+        {{/each-in}}
+        {{#if (and (eq username current_room_host) username)}}
+          <div class='admin-panel'>
+            {{#paper-subheader}}Admin Panel{{/paper-subheader}}
+            {{#paper-select
+              disabled=disableSelect
+              label="AI Strategy"
+              options=aiTypes
+              selected=aiType
+              onChange=(action (mut aiType))
+              as |state|}}
+              {{state.type}}
+            {{/paper-select}}
+            {{aiType.description}}
+            {{#paper-button disabled=(or (not aiType) (eq game_state 'ready_admin')) iconButton=true primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
 
-          {{#if (eq game_state 'ready_admin')}}
-            {{#paper-button primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
-          {{/if}}
-        </div>
-        <div class='content'>
-          <div class='cards'>
-            {{#each hand as |card|}}
-              {{card}}
-            {{/each}}
+            {{#if (eq game_state 'ready_admin')}}
+              {{#paper-button primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
+            {{/if}}
           </div>
-        </div>
-      {{/if}}
-      {{#if isYourTurn}}
-        <div class='action-panel'>
-          Your turn!
-        </div>
+          <div class='content'>
+            <div class='cards'>
+              my hand
+              {{#each hand as |card|}}
+                <div {{action 'toggleCardInRemoveQueue' card}}>{{card}}</div>
+              {{/each}}
+
+              {{#each-in removeFromHandQueue as |card_to_remove obj|}}
+                {{card_to_remove}}
+              {{/each-in}}
+            </div>
+          </div>
+        {{/if}}
+        {{#if isYourTurn}}
+          <div class='action-panel'>
+            Your turn!
+            {{#paper-button primary=true onClick=(action 'action_fold')}}Fold{{/paper-button}}
+            {{#paper-button disabled=(not current_room_bet) secondary=true onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
+          </div>
+        {{/if}}
+      {{else}}
+        Not connected to any room
       {{/if}}
     </div>
   </div>
@@ -82,3 +95,4 @@
     room=modal_room
   }}
 {{/if}}
+{{paper-toaster}}

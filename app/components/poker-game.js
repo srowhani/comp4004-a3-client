@@ -1,20 +1,20 @@
 import Component from '@ember/component';
-
+import { inject } from '@ember/service'
 import Faker from 'faker';
 export default Component.extend({
+  paperToaster: inject(),
   classNames: ['poker-game'],
   _ws: null,
   logs: [],
+  removeFromHandQueue: {},
+  userStateMap: {},
   aiTypes: [
     {
-      type: 'type_straight',
+      type: 'type_one',
       description: 'Aims for at least a straight'
     }, {
-      type: 'type_flush',
-      description: 'Aims for at least a flush'
-    }, {
-      type: 'type_high_card',
-      description: 'Gives more significance to the value of a high card'
+      type: 'type_two',
+      description: '3 visible cards leads to evaluating repull'
     }
   ],
   didInsertElement () {
@@ -45,7 +45,6 @@ export default Component.extend({
       this.get('logs').insertAt(0, {
         message: 'Catching up game state'
       })
-      this.set('users', content.users);
       this.set('available_rooms', content.available_rooms);
       // update initial state
     },
@@ -74,6 +73,10 @@ export default Component.extend({
     },
     update_user_list (content) {
       this.set('users', content.users);
+      content.users.forEach(u => {
+        this.userStateMap[u] = this.userStateMap[u] || {}
+      })
+      this.set('userStateMap', Ember.copy(this.userStateMap, true))
     },
     room_created (content) {
       this.set('available_rooms', content.available_rooms);
@@ -107,6 +110,10 @@ export default Component.extend({
       this.set('current_room_id', content.room_id);
       this.set('current_room_host', content.room_host);
       this.set('users', content.users);
+      content.users.forEach(u => {
+        this.userStateMap[u] = this.userStateMap[u] || {}
+      });
+      this.set('userStateMap', Ember.copy(this.userStateMap, true))
     },
 
     room_ready (content = {}) {
@@ -151,9 +158,46 @@ export default Component.extend({
     },
     got_cards (content) {
       this.set('hand', content.player_cards);
+      Object.keys(this.userStateMap).forEach(k => {
+        this.userStateMap[k].cards = 'XX XX XX XX XX';
+      })
+      this.set('userStateMap', Ember.copy(this.userStateMap, true))
     },
     turn_update (content) {
       this.set('isYourTurn', content.user_id === this.get('username'));
+    },
+    game_already_running () {
+      this.set('joinRoomModalVisible', false);
+      this.get('paperToaster').show('Session in progress', {
+        duration: 2000
+      })
+    },
+    action_fold () {
+      this._ws.send(JSON.stringify({
+        type: 'action_fold',
+        content: {
+          user_id: this.get('username'),
+          room_id: this.get('current_room_id')
+        }
+      }));
+    },
+    action_hold () {
+      this._ws.send(JSON.stringify({
+        type: 'action_call',
+        content: {
+          user_id: this.get('username'),
+          room_id: this.get('current_room_id')
+        }
+      }));
+    },
+
+    toggleCardInRemoveQueue (card) {
+      removeQueue[card] = true
+    },
+    fold (content) {
+      this.userStateMap[content.user_id].state = 'state_fold'
+      Ember.set(this.userStateMap[content.user_id], 'cards', content.cards.join(" "))
+      this.set('userStateMap', Ember.copy(this.userStateMap, true))
     }
   }
 });
