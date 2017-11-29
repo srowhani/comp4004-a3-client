@@ -54,26 +54,27 @@
               {{#paper-button primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
             {{/if}}
           </div>
-          <div class='content'>
-            <div class='cards'>
-              my hand
-              {{#each hand as |card|}}
-                <div {{action 'toggleCardInRemoveQueue' card}}>{{card}}</div>
-              {{/each}}
-
-              {{#each-in removeFromHandQueue as |card_to_remove obj|}}
-                {{card_to_remove}}
-              {{/each-in}}
-            </div>
-          </div>
         {{/if}}
         {{#if isYourTurn}}
           <div class='action-panel'>
             Your turn!
             {{#paper-button primary=true onClick=(action 'action_fold')}}Fold{{/paper-button}}
-            {{#paper-button disabled=(not current_room_bet) secondary=true onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
+            {{#paper-button secondary=true disabled=canSubmitRemoveCards onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
+            {{#paper-button primary=true disabled=(not canSubmitRemoveCards) onClick=(action 'improveCards' removeFromHandList)}}Improve Cards{{/paper-button}}
           </div>
         {{/if}}
+        <div class='content'>
+          <div class='cards'>
+            my hand
+            {{#each hand as |card|}}
+              <div {{action 'toggleCardInRemoveQueue' card}}>{{card}}</div>
+            {{/each}}
+            Cards to remove
+            {{#each-in removeFromHandQueue as |card_to_remove obj|}}
+              <div {{action 'toggleCardInRemoveQueue' card_to_remove}}>{{card_to_remove}}</div>
+            {{/each-in}}
+          </div>
+        </div>
       {{else}}
         Not connected to any room
       {{/if}}

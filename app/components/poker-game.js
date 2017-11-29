@@ -1,5 +1,6 @@
 import Component from '@ember/component';
 import { inject } from '@ember/service'
+import { computed } from '@ember/object';
 import Faker from 'faker';
 export default Component.extend({
   paperToaster: inject(),
@@ -110,6 +111,7 @@ export default Component.extend({
       this.set('current_room_id', content.room_id);
       this.set('current_room_host', content.room_host);
       this.set('users', content.users);
+      this.set('userStateMap', {})
       content.users.forEach(u => {
         this.userStateMap[u] = this.userStateMap[u] || {}
       });
@@ -159,9 +161,11 @@ export default Component.extend({
     got_cards (content) {
       this.set('hand', content.player_cards);
       Object.keys(this.userStateMap).forEach(k => {
-        this.userStateMap[k].cards = 'XX XX XX XX XX';
+        if (!this.userStateMap[k].cards)
+          this.userStateMap[k].cards = 'XX XX XX XX XX';
       })
       this.set('userStateMap', Ember.copy(this.userStateMap, true))
+      this.set('removeFromHandQueue', {});
     },
     turn_update (content) {
       this.set('isYourTurn', content.user_id === this.get('username'));
@@ -183,7 +187,7 @@ export default Component.extend({
     },
     action_hold () {
       this._ws.send(JSON.stringify({
-        type: 'action_call',
+        type: 'action_hold',
         content: {
           user_id: this.get('username'),
           room_id: this.get('current_room_id')
@@ -192,12 +196,47 @@ export default Component.extend({
     },
 
     toggleCardInRemoveQueue (card) {
-      removeQueue[card] = true
+      if (this.removeFromHandQueue[card]) {
+        delete this.removeFromHandQueue[card]
+        this.notifyPropertyChange('removeFromHandQueue');
+      } else {
+        Ember.set(this.removeFromHandQueue, card, true);
+      }
+      this.set('removeFromHandList', Object.keys(this.removeFromHandQueue));
+      this.set('canSubmitRemoveCards', Object.keys(this.removeFromHandQueue).length)
     },
     fold (content) {
       this.userStateMap[content.user_id].state = 'state_fold'
       Ember.set(this.userStateMap[content.user_id], 'cards', content.cards.join(" "))
       this.set('userStateMap', Ember.copy(this.userStateMap, true))
+    },
+    improveCards (cards) {
+      this._ws.send(JSON.stringify({
+        type: 'improve_cards',
+        content: {
+          room_id: this.get('current_room_id'),
+          user_id: this.get('username'),
+          cards_to_improve: cards.join(" ")
+        }
+      }));
+    },
+    attempt_improve_cards (content) {
+      Ember.set(this.userStateMap[content.user_id], 'cards', content.cards.join(" "))
+      this.set('userStateMap', Ember.copy(this.userStateMap, true))
+    },
+    winner (content) {
+      this.set('isYourTurn', false);
+      this.get('paperToaster').show(`Winner is ${content.user_id}`, {
+        duration: 2000
+      })
+    },
+    askForCards (cards) {
+      this._ws.send(JSON.stringify({
+        type: 'ask_for_cards',
+        content: {
+          cards: string
+        }
+      }))
     }
   }
 });
