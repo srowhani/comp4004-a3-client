@@ -38,28 +38,34 @@
         {{#if (and (eq username current_room_host) username)}}
           <div class='admin-panel'>
             {{#paper-subheader}}Admin Panel{{/paper-subheader}}
-            {{#paper-select
-              disabled=disableSelect
-              label="AI Strategy"
-              options=aiTypes
-              selected=aiType
-              onChange=(action (mut aiType))
-              as |state|}}
-              {{state.type}}
-            {{/paper-select}}
-            {{aiType.description}}
+
+            {{paper-input class='ai_type' placeholder="AI Strategy" autofocus=true value=aiType onChange=(action (mut aiType))}}
+            {{paper-input class='start_cards' placeholder="AI Start Cards" value=start_cards onChange=(action (mut start_cards))}}
+
             {{#paper-button disabled=(or (not aiType) (eq game_state 'ready_admin')) iconButton=true primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
 
             {{#if (eq game_state 'ready_admin')}}
-              {{#paper-button primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
+              {{#paper-button class='start_game' primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
             {{/if}}
+
+            {{#each winner_list as |winner index|}}
+              <div class='game-winner-{{index}}'>
+                <div class='user-id'>{{winner.user_id}}</div>
+                <div class='user-rank'>{{winner.rank}}</div>
+                <div class='user-cards'>
+                  {{#each winner.hand as |card|}}
+                    {{card}}-
+                  {{/each}}
+                </div>
+              </div>
+            {{/each}}
           </div>
         {{/if}}
         {{#if isYourTurn}}
           <div class='action-panel'>
             Your turn!
             {{#paper-button primary=true onClick=(action 'action_fold')}}Fold{{/paper-button}}
-            {{#paper-button secondary=true disabled=canSubmitRemoveCards onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
+            {{#paper-button class='button_hold' secondary=true disabled=canSubmitRemoveCards onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
             {{#paper-button primary=true disabled=(not canSubmitRemoveCards) onClick=(action 'improveCards' removeFromHandList)}}Improve Cards{{/paper-button}}
           </div>
         {{/if}}

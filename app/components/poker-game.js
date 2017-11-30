@@ -145,15 +145,21 @@ export default Component.extend({
       })
     },
     addAItoRoom () {
-      const ai = this.get('aiType');
-      this._ws.send(JSON.stringify({
+      const ai_type = this.get('aiType');
+      let s = {
         type: 'room_add_ai',
         content: {
           name: `bot-${faker.name.firstName()}`,
-          ai_type: ai.type,
-          room_id: this.get('current_room_id')
+          ai_type,
+          room_id: this.get('current_room_id'),
         }
-      }));
+      };
+
+      if (this.get('start_cards')) {
+        s.content.start_cards = this.get('start_cards');
+      }
+
+      this._ws.send(JSON.stringify(s));
     },
     game_started () {
       this.set('game_started', true);
@@ -225,8 +231,14 @@ export default Component.extend({
       this.set('userStateMap', Ember.copy(this.userStateMap, true))
     },
     winner (content) {
+      this.set('game_started', false);
+
+      this.set('removeFromHandQueue', {})
       this.set('isYourTurn', false);
-      this.get('paperToaster').show(`Winner is ${content.user_id}`, {
+      content.user_list = content.user_list.sort((v, u) => u.rank - v.rank)
+      this.set('winner_list', content.user_list);
+      this.set('gameWinner', content.user_list[0]);
+      this.get('paperToaster').show(`Winner is ${content.user_list[0].user_id}`, {
         duration: 2000
       })
     },
