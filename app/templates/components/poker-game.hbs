@@ -26,59 +26,109 @@
         {{/paper-list}}
       </div>
     </div>
-    <div class='flex' style='flex: 8'>
+    <div class='content flex' style='flex: 8'>
       {{#if current_room_id}}
-        RoomId: {{current_room_id}}<br/>
-        Host: {{current_room_host}}<br/>
-        {{#each-in userStateMap as |user state|}}
-          {{log user}}
-          {{log state}}
-          {{#if (not (eq user username))}}{{user}} - {{get state 'cards'}} - [{{get state 'state'}}] <br/>{{/if}}
-        {{/each-in}}
-        {{#if (and (eq username current_room_host) username)}}
-          <div class='admin-panel'>
-            {{#paper-subheader}}Admin Panel{{/paper-subheader}}
+        <div class='info'>
+          <div class='info-pod'>
+            <div class='item'>
+              <h4>Room ID</h4>
+              <code>{{current_room_id}}</code>
+            </div>
+            <div class='item'>
+              <h4>Host</h4>
+              <p>{{current_room_host}}</p>
+            </div>
+          </div>
+        </div>
+        <div class='main'>
+          <div class='actions'>
+            <div class='actions-pod'>
+              {{paper-input
+                disabled=game_started
+                class='my_starting_cards'
+                placeholder="Starting cards"
+                value=my_starting_cards onChange=(action (mut my_starting_cards))}}
+              {{#paper-button
+                  class='set_start_cards'
+                  disabled=game_started
+                  primary=true
+                  onClick=(action 'set_starting_cards' username current_room_id my_starting_cards)
+              }}Set Starting Cards{{/paper-button}}
+            </div>
+            <div class='actions-pod'>
+              {{paper-input class='remove_cards_from_deck' placeholder=(add (if shouldRemove 'Remove' 'Queue') ' cards') value=remove_cards_from_deck onChange=(action (mut remove_cards_from_deck))}}
+              {{x-toggle class='toggle-remove' value=shouldRemove onToggle=(action (mut shouldRemove))}}
+              {{#paper-button class='fire_remove_cards_from_deck' primary=true onClick=(action (if shouldRemove 'remove_cards_from_deck' 'queue_cards_to_deck') current_room_id remove_cards_from_deck)}}
+                {{if shouldRemove 'Remove Cards' 'Queue Cards'}}
+              {{/paper-button}}
+            </div>
+          </div>
+          <div class='game'>
+            {{#if (and (eq username current_room_host) username)}}
+              <div class='admin-panel'>
+                {{#paper-subheader}}Admin Panel{{/paper-subheader}}
 
-            {{paper-input class='ai_type' placeholder="AI Strategy" autofocus=true value=aiType onChange=(action (mut aiType))}}
-            {{paper-input class='start_cards' placeholder="AI Start Cards" value=start_cards onChange=(action (mut start_cards))}}
+                {{paper-input class='ai_type' placeholder="AI Strategy" autofocus=true value=aiType onChange=(action (mut aiType))}}
+                {{paper-input class='start_cards' placeholder="AI Start Cards" value=start_cards onChange=(action (mut start_cards))}}
 
-            {{#paper-button disabled=(or (not aiType) (eq game_state 'ready_admin')) iconButton=true primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
+                {{#paper-button disabled=(or (not aiType) (eq game_state 'ready_admin')) iconButton=true primary=true onClick=(action 'addAItoRoom')}}{{paper-icon 'plus one'}}{{/paper-button}}
 
-            {{#if (eq game_state 'ready_admin')}}
-              {{#paper-button class='start_game' primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
-            {{/if}}
-
-            {{#each winner_list as |winner index|}}
-              <div class='game-winner-{{index}}'>
-                <div class='user-id'>{{winner.user_id}}</div>
-                <div class='user-rank'>{{winner.rank}}</div>
-                <div class='user-cards'>
-                  {{#each winner.hand as |card|}}
-                    {{card}}-
-                  {{/each}}
-                </div>
+                {{#if (eq game_state 'ready_admin')}}
+                  {{#paper-button class='start_game' primary=true disabled=game_started onClick=(action 'startGame' current_room_id)}}Start Game{{/paper-button}}
+                {{/if}}
               </div>
-            {{/each}}
+            {{/if}}
           </div>
-        {{/if}}
-        {{#if isYourTurn}}
-          <div class='action-panel'>
-            Your turn!
-            {{#paper-button primary=true onClick=(action 'action_fold')}}Fold{{/paper-button}}
-            {{#paper-button class='button_hold' secondary=true disabled=canSubmitRemoveCards onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
-            {{#paper-button primary=true disabled=(not canSubmitRemoveCards) onClick=(action 'improveCards' removeFromHandList)}}Improve Cards{{/paper-button}}
-          </div>
-        {{/if}}
-        <div class='content'>
-          <div class='cards'>
-            my hand
-            {{#each hand as |card|}}
-              <div {{action 'toggleCardInRemoveQueue' card}}>{{card}}</div>
-            {{/each}}
-            Cards to remove
-            {{#each-in removeFromHandQueue as |card_to_remove obj|}}
-              <div {{action 'toggleCardInRemoveQueue' card_to_remove}}>{{card_to_remove}}</div>
-            {{/each-in}}
+        </div>
+        <div class='bottom'>
+          <div class='bottom-content'>
+            {{#if isYourTurn}}
+              <div class='box' style='flex: 2;'>
+                {{#paper-subheader}}Action{{/paper-subheader}}
+                {{#paper-button primary=true onClick=(action 'action_fold')}}Fold{{/paper-button}}
+                {{#paper-button class='button_hold' secondary=true disabled=canSubmitRemoveCards onClick=(action 'action_hold')}}Hold{{call_amount}}{{/paper-button}}
+                {{#paper-button primary=true disabled=(not canSubmitRemoveCards) onClick=(action 'improveCards' removeFromHandList)}}Improve Cards{{/paper-button}}
+              </div>
+            {{/if}}
+            <div class='box' style="{{if winner_list 'flex: 2;' 'flex: 1;'}}">
+              {{#paper-subheader}}{{if winner_list 'Winners' 'Players'}}{{/paper-subheader}}
+              {{#unless winner_list}}
+                {{#each-in userStateMap as |user state|}}
+                  {{#if (not (eq user username))}}{{user}} - {{get state 'cards'}} - [{{get state 'state'}}] <br/>{{/if}}
+                {{/each-in}}
+              {{else}}
+                <div class='row'>
+                  <div class='item bold'>Username</div>
+                  <div class='item bold'>Rank</div>
+                  <div class='item bold'>Cards</div>
+                </div>
+                {{#each winner_list as |winner index|}}
+                  <div class='row game-winner-{{index}}'>
+                    <div class='item user-id'>{{winner.user_id}}</div>
+                    <div class='item user-rank'>{{winner.rank}}</div>
+                    <div class='item user-cards'>
+                      <code>
+                        {{#each winner.hand as |card i|}}
+                          {{card}}{{if (eq (add i 1) winner.hand.length) '' ' - '}}
+                        {{/each}}
+                      </code>
+                    </div>
+                  </div>
+                {{/each}}
+              {{/unless}}
+            </div>
+            <div class='box'>
+              {{#paper-subheader}}Hand{{/paper-subheader}}
+              {{#each hand as |card|}}
+                <div {{action 'toggleCardInRemoveQueue' card}}>{{card}}</div>
+              {{/each}}
+            </div>
+            <div class='box'>
+              {{#paper-subheader}}Cards to remove{{/paper-subheader}}
+              {{#each-in removeFromHandQueue as |card_to_remove obj|}}
+                <div {{action 'toggleCardInRemoveQueue' card_to_remove}}>{{card_to_remove}}</div>
+              {{/each-in}}
+            </div>
           </div>
         </div>
       {{else}}

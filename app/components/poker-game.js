@@ -9,6 +9,7 @@ export default Component.extend({
   logs: [],
   removeFromHandQueue: {},
   userStateMap: {},
+  shouldRemove: true,
   aiTypes: [
     {
       type: 'type_one',
@@ -249,6 +250,39 @@ export default Component.extend({
           cards: string
         }
       }))
+    },
+    set_starting_cards(user_id, room_id, cards) {
+      this._ws.send(JSON.stringify({
+        type: 'set_starting_cards',
+        content: {
+          user_id,
+          room_id,
+          cards
+        }
+      }))
+    },
+    remove_cards_from_deck (room_id, cards) {
+      this._ws.send(JSON.stringify({
+        type: 'remove_cards_from_deck',
+        content: {
+          room_id,
+          cards
+        }
+      }));
+    },
+    queue_cards_to_deck (room_id, cards) {
+      this._ws.send(JSON.stringify({
+        type: 'queue_cards_to_deck',
+        content: {
+          room_id,
+          cards
+        }
+      }))
+    },
+    strat_one () {
+      this.get('paperToaster').show('Using strategy one!', {
+        duration: 2000
+      });
     }
   }
 });
